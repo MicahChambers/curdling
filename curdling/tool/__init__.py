@@ -1,5 +1,9 @@
+"""
+Main 'tool' for using curdling. As opposed to the web server.
+"""
 from __future__ import absolute_import, print_function, unicode_literals
 from functools import partial
+from collections import OrderedDict
 from ..index import Index
 from ..util import expand_requirements, safe_name, spaces, logger
 from ..version import __version__
@@ -20,6 +24,13 @@ DEFAULT_PYPI_INDEX_LIST = [
     'http://pypi.python.org/simple/',
 ]
 
+LOG_LEVELS = OrderedDict([
+    ('DEBUG', 10),
+    ('INFO', 20),
+    ('WARNING', 30),
+    ('ERROR',40),
+    ('CRITICAL', 50),
+])
 
 class StreamHandler(logging.StreamHandler):
     """Instantiate logging.StreamHandler correctly for Python 2.6
@@ -86,9 +97,14 @@ def add_parser_freeze(subparsers):
 
 
 def initialize_logging(log_file, log_level, log_name):
-    # Set the log level for the requested logger
+    """
+    log_file    -- file to write to
+    log_level   -- string matching the log level name
+    log_nam     -- name of logger so that other areas of the code can attach
+    """
     handler = StreamHandler(stream=log_file)
-    handler.setLevel(log_level)
+    int_level = LOG_LEVELS[log_level]
+    handler.setLevel(int_level)
     handler.setFormatter(logging.Formatter('%(asctime)s:%(name)s:%(levelname)s:%(message)s'))
     logging.getLogger(log_name).setLevel(level=log_level)
     logging.getLogger(log_name).addHandler(handler)
@@ -229,15 +245,9 @@ def main():
         description='Curdles your cheesy code and extracts its binaries')
 
     # General arguments. All the commands have access to the following options
-    if sys.version_info.major != 3:
-        levels = [i for i in logging._levelNames.keys()
-            if not isinstance(i, int) and i != 'NOTSET']
-    else:
-        levels = [i for i in logging._levelToName.keys()
-            if not isinstance(i, int) and i != 'NOTSET']
     parser.add_argument(
-        '-l', '--log-level', default='CRITICAL', choices=levels, type=unicode.upper,
-        help='Log verbosity level (for nerds): {0}'.format(', '.join(levels)))
+        '-l', '--log-level', default='CRITICAL', choices=LOG_LEVELS.keys(),
+        help='Log verbosity level (for nerds): {0}'.format(', '.join(LOG_LEVELS.keys())))
 
     parser.add_argument(
         '--log-file', type=argparse.FileType('w'), default=sys.stderr,
@@ -286,3 +296,4 @@ def main():
         return command.run()
     except KeyboardInterrupt:
         raise SystemExit(0)
+
