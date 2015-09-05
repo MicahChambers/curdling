@@ -247,7 +247,7 @@ def main():
     # General arguments. All the commands have access to the following options
     parser.add_argument(
         '-l', '--log-level', default='CRITICAL', choices=LOG_LEVELS.keys(),
-        help='Log verbosity level (for nerds): {0}'.format(', '.join(LOG_LEVELS.keys())))
+        help='Log verbosity level (for nerds)')
 
     parser.add_argument(
         '--log-file', type=argparse.FileType('w'), default=sys.stderr,
