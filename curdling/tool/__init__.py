@@ -230,9 +230,6 @@ def install_command(args):
         'index': index,
     })
 
-    tarballs = [pkg for pkg in args.packages
-                if os.path.isfile(pkg) and acceptable_file_type(pkg)]
-    args.packages = [pkg for pkg in args.packages if pkg not in tarballs]
     initial_requirements = get_packages_from_args(args)
 
     # Callbacks that show feedback for the user

@@ -38,7 +38,7 @@ def get_distribution_paths(name):
 class Installer(Service):
 
     def handle(self, requester, data):
-        name = parse_requirement(data['requirement']).name
+        name = data['requirement'].name
         wheel = Wheel(data['wheel'])
         wheel.install(get_distribution_paths(name))
         return data

@@ -39,6 +39,31 @@ class Requirement(object):
         command line and parses, determining constraints. Also contains helper
         to download the requirement.
         """
+        # needs to handle
+        # tarball input
+        # packagename
+        # packagename==xxx
+        # packagename>=xxx
+        # packagename<=xxx
+        # packagename>xxx
+        # packagename<xxx
+
+        # git+https://myvcs.com/some_dependency@sometag#egg=SomeDependency
+        # -i, --index-url
+        # --extra-index-url
+        # --no-index
+        # -f, --find-links
+        # --allow-external
+        # --allow-all-external
+        # --allow-unverified
+        # --no-binary
+        # --only-binary
+
+        # Check if the requriement is a tarball
+        tarballs = [pkg for pkg in args.packages
+                    if os.path.isfile(pkg) and acceptable_file_type(pkg)]
+        args.packages = [pkg for pkg in args.packages if pkg not in tarballs]
+
         if not is_url(spec):
             requirement = util.parse_requirement(spec)
             requirement.name = safe_name(requirement.name)
