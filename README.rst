@@ -1,6 +1,8 @@
 Welcome to Curdling
 ===================
 
+WIP, refactoring and trying to reach feature parity with PIP
+
 .. image:: https://travis-ci.org/clarete/curdling.png?branch=master
    :target: https://travis-ci.org/clarete/curdling
 
