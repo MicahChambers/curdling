@@ -37,7 +37,7 @@ class Requirement(object):
         """
         Takes a line from a requirements file or a single argument from the
         command line and parses, determining constraints. Also contains helper
-        to download the requirement
+        to download the requirement.
         """
         if not is_url(spec):
             requirement = util.parse_requirement(spec)

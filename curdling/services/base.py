@@ -63,11 +63,7 @@ class Service(SignalEmitter):
         raise NotImplementedError(
             "The service subclass should override this method")
 
-    def __call__(self, requester, **kwargs):
-        return self.handle(requester, kwargs)
-
     # -- Private API --
-
     def _worker(self):
         name = '{0}[{1}]'.format(self.name, threading.current_thread().name)
 
@@ -77,7 +73,7 @@ class Service(SignalEmitter):
             self.logger.debug('%s.run(data="%s")', name, sender_data)
             try:
                 self.emit('started', self.name, **sender_data)
-                result = self(requester, **sender_data) or {}
+                result = self.handle(requester, sender_data) or {}
                 self._queue.task_done()
             except BaseException:
                 fname, lineno, fn, text = traceback.extract_tb(sys.exc_info()[2])[0]

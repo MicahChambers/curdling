@@ -253,8 +253,7 @@ def install_command(args):
     cmd.start()
     for pkg in tarballs:
         metadata = pkginfo.SDist(pkg)
-        cmd.queue(
-            'main', tarball=pkg, requirement=metadata.name, directory=None)
+        cmd.queue('main', tarball=pkg, requirement=metadata.name, directory=None)
     for pkg in initial_requirements:
         cmd.queue('main', requirement=pkg)
 
