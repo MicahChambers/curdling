@@ -63,8 +63,19 @@ def add_parser_install(subparsers):
         '-u', '--upload', action='store_true', default=False,
         help='Upload packages back to the curdling index')
     parser.add_argument(
-        '-f', '--force', action='store_true', default=False,
+        '--force-reinstall', action='store_true', default=False,
         help='Skip checking if the requirement requested is already installed')
+    parser.add_argument(
+        '-U', '--upgrade', action='store_true', default=False,
+        help='''Upgrade all specified packages to the newest available version.
+        This process is recursive regardless of whether a dependency is already
+        satisfied.''')
+    parser.add_argument(
+        '--user', action='store_true', default=False,
+        help='Install using the user scheme.')
+    parser.add_argument(
+        '--root', type=str,
+        help='Install everything relative to this alternate root directory.')
     parser.add_argument(
         'packages', metavar='REQUIREMENT', nargs='*',
         help='list of requirements to install')
@@ -183,7 +194,10 @@ def acceptable_file_type(filename):
         return False
 
 
-def get_install_command(args):
+##############################################################################
+# Commands
+##############################################################################
+def install_command(args):
     index = Index(os.path.expanduser('~/.curds'))
     index.scan()
 
@@ -191,7 +205,7 @@ def get_install_command(args):
         'log_level': args.log_level,
         'pypi_urls': args.index or DEFAULT_PYPI_INDEX_LIST,
         'curdling_urls': args.curdling_index,
-        'force': args.force,
+        'force': args.force_reinstall,
         'upload': args.upload,
         'index': index,
     })
@@ -223,23 +237,29 @@ def get_install_command(args):
             'main', tarball=pkg, requirement=metadata.name, directory=None)
     for pkg in initial_requirements:
         cmd.queue('main', requirement=pkg)
-    return cmd
+
+    cmd.run()
 
 
-def get_uninstall_command(args):
+def uninstall_command(args):
     cmd = Uninstall({
         'log_level': args.log_level,
     })
 
     for pkg in get_packages_from_args(args):
         cmd.request_uninstall(pkg)
-    return cmd
+
+    cmd.run()
 
 
-def get_freeze_command(args):
-    return Freeze(args.root_path)
+def freeze_command(args):
+    cmd = Freeze(args.root_path)
+    cmd.run()
 
 
+##############################################################################
+# Main
+##############################################################################
 def main():
     parser = argparse.ArgumentParser(
         description='Curdles your cheesy code and extracts its binaries')
@@ -286,14 +306,13 @@ def main():
     # instance that will be ran. Notice that all the `add_parser_*` functions
     # *MUST* set the variable `command` using `parser.set_defaults` otherwise
     # we'll get an error here.
-    command = {
-        'install': get_install_command,
-        'uninstall': get_uninstall_command,
-        'freeze': get_freeze_command,
-    }[args.command](args)
-
     try:
-        return command.run()
+        if args.command == 'install':
+            install_command(args)
+        elif args.command == 'uninstall':
+            uninstall_command(args).run()
+        elif args.command == 'freeze':
+            freeze_command(args).run()
     except KeyboardInterrupt:
         raise SystemExit(0)
 
