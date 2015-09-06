@@ -47,6 +47,9 @@ class StreamHandler(logging.StreamHandler):
             super(StreamHandler, self).__init__(stream=stream)
 
 
+############################################################################
+# Parsers
+############################################################################
 def add_parser_install(subparsers):
     parser = subparsers.add_parser(
         'install', help='Locate and install packages')
@@ -107,6 +110,9 @@ def add_parser_freeze(subparsers):
     return parser
 
 
+###############################################
+# Shared Helplers
+###############################################
 def initialize_logging(log_file, log_level, log_name):
     """
     log_file    -- file to write to
@@ -122,15 +128,28 @@ def initialize_logging(log_file, log_level, log_name):
 
 
 def get_packages_from_args(args):
+    """
+    Gets all the packages directly located on the command line, as well as any
+    included through requirements files specified on the command line
+
+    :param namespace args: The following arguments are used:
+        list packages: List of all packages specified directly on the command line
+        list requriements: List of all requirements files specified on the
+            command line
+    """
     if not args.packages and not args.requirements:
         return []
-    packages = [safe_name(req) for req in (args.packages or [])]
+
+    #
+    packages = [Requirement(req) for req in (args.packages or [])]
     for requirements in args.requirements or []:
-        for pkg in expand_requirements(requirements):
-            packages.append(pkg)
+        packages.extend(expand_requirements(requirements))
     return packages
 
 
+###########################################################
+# Install Helpers
+###########################################################
 def progress_bar(prefix, percent):
     percent_count = int(percent / 10)
     progress_bar = ('#' * percent_count) + (' ' * (10 - percent_count))
@@ -201,6 +220,7 @@ def install_command(args):
     index = Index(os.path.expanduser('~/.curds'))
     index.scan()
 
+    # TODO make Install take actual arguments
     cmd = Install({
         'log_level': args.log_level,
         'pypi_urls': args.index or DEFAULT_PYPI_INDEX_LIST,
@@ -310,9 +330,9 @@ def main():
         if args.command == 'install':
             install_command(args)
         elif args.command == 'uninstall':
-            uninstall_command(args).run()
+            uninstall_command(args)
         elif args.command == 'freeze':
-            freeze_command(args).run()
+            freeze_command(args)
     except KeyboardInterrupt:
         raise SystemExit(0)
 

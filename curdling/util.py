@@ -28,65 +28,103 @@ import urllib3
 
 
 INCLUDE_PATTERN = re.compile(r'-r\s*\b([^\b]+)')
-
 LINK_PATTERN = re.compile(r'^([^\:]+):\/\/.+')
-
 ROOT_LOGGER = logging.getLogger('curdling')
 
 
 class Requirement(object):
+    def __init__(self, spec):
+        """
+        Takes a line from a requirements file or a single argument from the
+        command line and parses, determining constraints. Also contains helper
+        to download the requirement
+        """
+        if not is_url(spec):
+            requirement = util.parse_requirement(spec)
+            requirement.name = safe_name(requirement.name)
+            requirement.requirement = safe_requirement(spec)
+            requirement.is_link = False
+        else:
+            requirement = Requirement()
+            requirement.name = spec
+            requirement.requirement = spec
+            requirement.constraints = ()
+            requirement.is_link = True
+            requirement.extras = ()
+        return requirement
+    """
+    TODO init
+    TODO add force-reinstall
+    TODO add allow-external
+    TODO add allow-unverified
+    """
     name = None
 
 
 def is_url(requirement):
-    return ':' in requirement
+    """
+    TODO urlparse for validity, reconstruct
+    """
+    return '://' in requirement
 
-
-def safe_name(requirement):
-    return requirement if is_url(requirement) \
-        else safe_requirement(requirement)
-
-
-def safe_requirement(requirement):
-    safe = requirement.lower().replace('_', '-')
-    parsed = util.parse_requirement(safe)
-    output = parsed.name
-    if parsed.extras:
-        output += '[{0}]'.format(','.join(parsed.extras))
-    if parsed.constraints:
-        def c(operator, version):
-            return version if operator == '==' \
-                else '{0} {1}'.format(operator, version)
-        output += ' ({0})'.format(
-            ', '.join(c(*i) for i in parsed.constraints))
-    return output
-
-
-def safe_constraints(spec):
-    if is_url(spec):
-        return None
-    constraints = util.parse_requirement(spec).constraints or ()
-    constraint = lambda k, v: \
-        ('{0} {1}'.format(k, v)
-         .replace('== ', '')
-         .replace('==', ''))
-    return ', '.join(constraint(k, v) for k, v in constraints) or None
-
-
-def parse_requirement(spec):
-    if not is_url(spec):
-        requirement = util.parse_requirement(spec)
-        requirement.name = safe_name(requirement.name)
-        requirement.requirement = safe_requirement(spec)
-        requirement.is_link = False
-    else:
-        requirement = Requirement()
-        requirement.name = spec
-        requirement.requirement = spec
-        requirement.constraints = ()
-        requirement.is_link = True
-        requirement.extras = ()
-    return requirement
+#
+#def safe_name(str_requirement):
+#    """
+#    Cleanses names (removes _, uppercase) if they are not URLs
+#    TODO handle git urls
+#    TODO handle urls with eggname and version numbers
+#    """
+#    if is_url(str_requirement):
+#        return str_requirement
+#    else:
+#        safe_requirement(str_requirement)
+#
+#
+#def safe_requirement(requirement):
+#    """
+#    Converts _ to -, creates the Requriement
+#    """
+#    safe = requirement.lower().replace('_', '-')
+#    parsed = util.parse_requirement(safe)
+#    output = parsed.name
+#    if parsed.extras:
+#        output += '[{0}]'.format(','.join(parsed.extras))
+#    if parsed.constraints:
+#        def c(operator, version):
+#            return version if operator == '==' \
+#                else '{0} {1}'.format(operator, version)
+#        output += ' ({0})'.format(
+#            ', '.join(c(*i) for i in parsed.constraints))
+#    return output
+#
+#
+#def safe_constraints(spec):
+#    if is_url(spec):
+#        return None
+#    constraints = util.parse_requirement(spec).constraints or ()
+#    constraint = lambda k, v: \
+#        ('{0} {1}'.format(k, v)
+#         .replace('== ', '')
+#         .replace('==', ''))
+#    return ', '.join(constraint(k, v) for k, v in constraints) or None
+#
+#
+#
+#
+#def parse_requirement(spec):
+#    if not is_url(spec):
+#        requirement = util.parse_requirement(spec)
+#        requirement.name = safe_name(requirement.name)
+#        requirement.requirement = safe_requirement(spec)
+#        requirement.is_link = False
+#    else:
+#        requirement = Requirement()
+#        requirement.name = spec
+#        requirement.requirement = spec
+#        requirement.constraints = ()
+#        requirement.is_link = True
+#        requirement.extras = ()
+#    return requirement
 
 
 def split_name(fname):
@@ -100,6 +138,9 @@ def split_name(fname):
 
 
 def expand_requirements(open_file):
+    """
+    Takes a requirements file and expands it ito a list of Requirement Classes
+    """
     requirements = []
 
     for req in open_file.read().splitlines():
